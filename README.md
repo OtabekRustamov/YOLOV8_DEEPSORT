@@ -13,12 +13,12 @@ pip install ultralytics
 
 ### Run
 
-1. **Counting people **:
+1. **Counting people**:
    - Tracks objects using DeepSORT to assign unique IDs
    - Counts the number of people crossing a single line in up or down directions.
    - ![Counting People](data/people.PNG)
 
-1. **Speed Calculation **:
+2. **Speed Calculation**:
    - Tracks objects using DeepSORT to assign unique IDs
    -  Calculates the speed of objects crossing two lines..
    - ![Speed Calculation](data/speed.PNG)
@@ -28,7 +28,7 @@ pip install ultralytics
 * Check `./runs/` folder
 
 ### Demo data
-* https://youtu.be/rfkGy6dwWJ(counting people)
+* https://youtu.be/rfkGy6dwWJ (counting people)
 * data/highway.mp4(speed calculation)
 
 #### Reference
