@@ -205,6 +205,8 @@ class Extractor(object):
             features = self.reid(im_batch)
         return features.cpu().numpy()
 
+def to_cpu_value(value):
+    return value.cpu().item() if isinstance(value, torch.Tensor) else value
 
 class DeepSort(object):
     def __init__(self,
@@ -224,17 +226,20 @@ class DeepSort(object):
 
     def update(self, bbox_xywh, confidences, oids, ori_img):
         self.height, self.width = ori_img.shape[:2]
-        # generate detections
-        features = self._get_features(bbox_xywh, ori_img)
-        bbox_tl_wh = self._xywh_to_tlwh(bbox_xywh)
-        detections = [util.Detection(bbox_tl_wh[i], conf, features[i], oid) for i, (conf, oid) in
-                      enumerate(zip(confidences, oids)) if conf > self.min_confidence]
+        # Convert bbox_xywh to PyTorch tensor
+        bbox_xywh = torch.tensor(bbox_xywh, dtype=torch.float32)
 
-        # update tracker
+        # Generate detections
+        features = self._get_features(bbox_xywh, ori_img)
+        bbox_tl_wh = self._xywh_to_tlwh(bbox_xywh)  # Now this will work
+        detections = [util.Detection(bbox_tl_wh[i], conf, features[i], oid)
+                      for i, (conf, oid) in enumerate(zip(confidences, oids)) if conf > self.min_confidence]
+
+        # Update tracker
         self.tracker.predict()
         self.tracker.update(detections)
 
-        # output bbox identities
+        # Output bbox identities
         outputs = []
         for track in self.tracker.tracks:
             if not track.is_confirmed() or track.time_since_update > 1:
@@ -243,7 +248,11 @@ class DeepSort(object):
             x1, y1, x2, y2 = self._tlwh_to_xyxy(box)
             track_id = track.track_id
             track_oid = track.oid
-            outputs.append(numpy.array([x1, y1, x2, y2, track_id, track_oid], dtype=numpy.int))
+            outputs.append(numpy.array([
+                to_cpu_value(x1), to_cpu_value(y1), to_cpu_value(x2), to_cpu_value(y2),
+                to_cpu_value(track_id), to_cpu_value(track_oid)
+            ], dtype=int))
+
         if len(outputs) > 0:
             outputs = numpy.stack(outputs, axis=0)
         return outputs

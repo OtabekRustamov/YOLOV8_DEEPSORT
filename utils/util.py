@@ -1,6 +1,45 @@
 import numpy
 import scipy.linalg
 from scipy.optimize import linear_sum_assignment
+import cv2
+
+
+def fancy_bounding_box(frame, bbox, index=None, l=20, t=3):
+    """
+    Draws a stylized bounding box with fancy corners and optional ID label.
+    """
+    x, y, w, h = bbox
+    x1, y1 = x + w, y + h
+
+    # Standard rectangle
+    cv2.rectangle(frame, bbox, (0, 200, 0), 2)
+
+    # Top-left corner
+    cv2.line(frame, (x, y), (x + l, y), (255, 0, 255), t)
+    cv2.line(frame, (x, y), (x, y + l), (255, 0, 255), t)
+
+    # Top-right corner
+    cv2.line(frame, (x1, y), (x1 - l, y), (255, 0, 255), t)
+    cv2.line(frame, (x1, y), (x1, y + l), (255, 0, 255), t)
+
+    # Bottom-left corner
+    cv2.line(frame, (x, y1), (x + l, y1), (255, 0, 255), t)
+    cv2.line(frame, (x, y1), (x, y1 - l), (255, 0, 255), t)
+
+    # Bottom-right corner
+    cv2.line(frame, (x1, y1), (x1 - l, y1), (255, 0, 255), t)
+    cv2.line(frame, (x1, y1), (x1, y1 - l), (255, 0, 255), t)
+
+    # Add ID label if provided
+    if index is not None:
+        text = f'ID:{str(index)}'
+        cv2.putText(frame, text,
+                    (x, y - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0),
+                    thickness=1, lineType=cv2.LINE_AA)
+
+    return frame
+
 
 """
 Table for the 0.95 quantile of the chi-square distribution with N degrees of
@@ -840,7 +879,7 @@ class Track:
         """
         return self.state == TrackState.Deleted
 
-
+import torch
 class Detection(object):
     """
     This class represents a bounding box detection in a single image.
@@ -866,7 +905,9 @@ class Detection(object):
     """
 
     def __init__(self, tlwh, confidence, feature, oid):
-        self.tlwh = numpy.asarray(tlwh, dtype=numpy.float)
+        # Move tensor to CPU if it's on GPU before converting to numpy array
+        self.tlwh = numpy.asarray(tlwh.cpu() if isinstance(tlwh, torch.Tensor) else tlwh, dtype=float)
+
         self.confidence = float(confidence)
         self.feature = numpy.asarray(feature, dtype=numpy.float32)
         self.oid = oid
